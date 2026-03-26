@@ -1,161 +1,264 @@
+from typing import Any, Dict, List
+from base import BaseExercise
+import spacy
 import random
-from typing import Dict, Any, List
-from .base import BaseExercise
+from spacy.matcher import Matcher
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+
+
+nlp = spacy.load("fr_core_news_sm")
+tfs_tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-small")
+tfs_model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-small")
+
+tfs_matcher = Matcher(nlp.vocab)
+
+tfs_matcher.add("QUANTIFIERS", [
+    [{"LOWER": "tout"}],
+    [{"LOWER": "tous"}],
+    [{"LOWER": "aucun"}],
+    [{"LOWER": "aucune"}],
+    [{"LOWER": "certains"}],
+    [{"LOWER": "certaines"}],
+])
+
+tfs_matcher.add("TEMPORAL_MARKERS", [
+    [{"LOWER": "toujours"}],
+    [{"LOWER": "parfois"}],
+    [{"LOWER": "jamais"}],
+    [{"LOWER": "souvent"}],
+    [{"LOWER": "rarement"}],
+    [{"LIKE_NUM": True}],
+])
+
+replacements = {
+    "QUANTIFIERS": {
+        "tous": "certains",
+        "aucun": "tous",
+        "aucune": "tous",
+        "certains": "aucun",
+        "certaines": "aucune",
+    },
+    "TEMPORAL_MARKERS": {
+        "toujours": "parfois",
+        "parfois": "toujours",
+        "jamais": "toujours",
+        "rarement": "souvent",
+    }
+}
+
+def find_markers_in_doc(doc: spacy.tokens.Doc, matcher: Matcher) -> List[Dict[str, Any]]:
+    """
+    Find pattern‑based fragments (quantifiers, temporal markers etc.) in a spaCy Doc.
+
+    Args:
+        doc (spacy.tokens.Doc): Input text wrapped as a spaCy Doc.
+        matcher (Matcher): Matcher with defined patterns.
+
+    Returns:
+        list[dict]: List of found fragments with label, text, offsets, and sentence bounds.
+    """
+    results = []
+    matches = matcher(doc)
+    for match_id, start, end in matches:
+        span = doc[start:end]
+        label = doc.vocab.strings[match_id]
+        results.append({
+            "label": label,
+            "text": span.text,
+            "start": start,
+            "end": end,
+            "sent_start": span.sent.start,
+            "sent_end": span.sent.end,
+        })
+    return results
+
+def distort_span(sent_doc: spacy.tokens.Span, marker: Dict[str, Any]) -> str:
+    """
+    Replace one phrase in a sentence based on a marker and predefined rules.
+
+    Args:
+        sent_doc (spacy.tokens.Span): The sentence as a spaCy Span.
+        marker (dict): Marker dictionary with label, text, and offsets.
+
+    Returns:
+        str: Sentence with one fragment changed.
+    """
+    label = marker["label"]
+    old_text = marker["text"]
+    start = marker["start"] - sent_doc.start
+    end = marker["end"] - sent_doc.start
+    new_word = replacements.get(label, {}).get(old_text.lower(), "toujours")
+    left = sent_doc[:start].text
+    right = sent_doc[end:].text
+    new_sent = left + " " + new_word + " " + right
+    return new_sent.strip()
+
+def paraphrase(model, tokenizer, sentence: str, num_return_sequences=1) -> List[str]:
+    """
+    Generate paraphrased versions of a French sentence using a T5‑style model.
+
+    Args:
+        model (AutoModelForSeq2SeqLM): Transformer model for paraphrasing.
+        tokenizer (AutoTokenizer): Tokenizer compatible with the model.
+        sentence (str): French sentence to paraphrase.
+        num_return_sequences (int): Number of paraphrases to generate.
+
+    Returns:
+        list[str]: List of paraphrased sentences.
+    """
+
+    input_text = f"paraphrase en français: {sentence}"
+    inputs = tokenizer(
+        input_text,
+        padding="longest",
+        return_tensors="pt",
+        truncation=True,
+        max_length=256
+    )
+    outputs = model.generate(
+        **inputs,
+        num_beams=5,
+        num_return_sequences=num_return_sequences,
+        max_length=256,
+        temperature=0.8,
+    )
+    paraphrases = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+    return paraphrases
 
 
 class TrueFalseExercise(BaseExercise):
-    """Упражнение Верно/Неверно - определить корректность утверждений о тексте"""
+    """
+    Generator of True-False Exercises.
+    """
 
     def __init__(self, exercise_id: str):
-        super().__init__(exercise_id, "Определите, верны ли следующие утверждения (Верно/Неверно)")
-        self.statements: List[
-            Dict[str, Any]] = []  # Каждое утверждение: {'text': str, 'is_true': bool, 'explanation': str}
+        super().__init__(
+            exercise_id,
+            "Определите, верны ли следующие утверждения (Vrai / Faux)"
+        )
+        self.statements = []
+        self.question = None
+        self.answer = None
+        self.options = ["Vrai", "Faux"]
 
     def generate(self, context: Dict[str, Any]) -> None:
-        """Генерирует утверждения на основе текста"""
-        sentence = context.get('sentence', '')
-        words = context.get('words', [])
+        """
+        Generate True/False statements from context.
 
-        if not sentence:
-            raise ValueError("Нет предложения для создания утверждений")
+        Args:
+            context (dict): Must contain "sentence", optionally "words", "lemmas", "other_words".
 
-        # Создаем несколько утверждений на основе предложения
-        self.statements = self._generate_statements(sentence, words)
+        Raises:
+            ValueError: If "sentence" is missing or empty.
 
-        # Формируем вопрос
-        self.question = f"Прочитайте предложение и определите, верны ли утверждения:\n\n\"{sentence}\"\n"
+        Returns:
+            None: Mutates self.question, self.statements, self.answer.
+        """
+        sentence = context.get("sentence", "")
 
-        # Добавляем утверждения в вопрос
+        if not sentence or not sentence.strip():
+            raise ValueError("Отсутствует 'sentence' в context для TrueFalseExercise")
+
+        sentences = [sentence]
+
+        doc = nlp(sentence)
+        all_markers = find_markers_in_doc(doc, tfs_matcher)
+
+        self.statements = self._generate_statements(sentences, all_markers)
+
+        self.question = (
+            "Прочитайте предложение и определите, верны ли утверждения:\n\n"
+            f"\"{sentence}\"\n"
+        )
+
         for i, stmt in enumerate(self.statements, 1):
             self.question += f"\n{i}. {stmt['text']}"
 
-        # Формируем ответ (все правильные ответы)
-        self.answer = [stmt['is_true'] for stmt in self.statements]
-        self.options = ['Верно', 'Неверно']
+        self.answer = [stmt["is_true"] for stmt in self.statements]
 
-    def _generate_statements(self, sentence: str, words: List[str]) -> List[Dict[str, Any]]:
-        """Генерирует набор утверждений (правдивых и ложных) на основе предложения"""
-        statements = []
+    def _get_true_statements(self, sentences: List[str]) -> List[Dict[str, Any]]:
+        """
+        Create true statements by paraphrasing input sentences.
 
-        # Разбиваем предложение на части
-        sentence_lower = sentence.lower()
+        Args:
+            sentences (list[str]): List of sentences.
 
-        # 1. Правдивое утверждение - копируем часть предложения
-        if len(words) >= 3:
-            # Берем первые 3-4 слова как правдивое утверждение
-            true_stmt = ' '.join(words[:min(4, len(words))])
-            statements.append({
-                'text': f"В тексте говорится: \"{true_stmt}...\"",
-                'is_true': True,
-                'explanation': f"Это верно, так как в предложении есть эти слова"
+        Returns:
+            list[dict]: List of true statements with text, is_true, and original.
+        """
+        true_statements = []
+        for sent in sentences:
+            paraphrased = paraphrase(tfs_model, tfs_tokenizer, sent)[0]
+            true_statements.append({
+                "text": paraphrased,
+                "is_true": True,
+                "original": sent,
             })
+        return true_statements
 
-        # 2. Ложное утверждение - меняем ключевое слово
-        if words:
-            # Выбираем случайное слово и заменяем его
-            word_to_replace = random.choice(words)
-            opposite_words = {
-                "большой": "маленький",
-                "хороший": "плохой",
-                "новый": "старый",
-                "есть": "нет",
-                "любит": "ненавидит",
-                "всегда": "никогда",
-                "можно": "нельзя",
-                "да": "нет"
-            }
+    def _get_false_statements(
+        self,
+        sentences: List[str],
+        all_markers: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        Create false statements by changing one marked fragment per sentence.
 
-            # Ищем противоположность
-            replacement = opposite_words.get(word_to_replace.lower(), f"не {word_to_replace}")
+        Args:
+            sentences (list[str]): List of sentences.
+            all_markers (list[dict]): Markers found in those sentences.
 
-            false_stmt = sentence.replace(word_to_replace, replacement, 1)
-            statements.append({
-                'text': false_stmt,
-                'is_true': False,
-                'explanation': f"Это неверно, потому что в оригинале сказано \"{word_to_replace}\", а не \"{replacement}\""
-            })
+        Returns:
+            list[dict]: List of false statements with text, is_true, and original.
+        """
+        false_statements = []
 
-        # 3. Правдивое утверждение о сути предложения
-        # Извлекаем главную мысль (упрощенно)
-        main_idea = self._extract_main_idea(sentence, words)
-        if main_idea:
-            statements.append({
-                'text': main_idea,
-                'is_true': True,
-                'explanation': "Это верно, так как отражает основную мысль предложения"
-            })
-
-        # 4. Ложное утверждение с противоположным смыслом
-        if len(words) >= 2:
-            # Создаем отрицание или противопоставление
-            if 'не' in sentence_lower:
-                # Если есть "не", убираем его для ложного утверждения
-                false_stmt = sentence.replace('не', '', 1)
-                statements.append({
-                    'text': false_stmt,
-                    'is_true': False,
-                    'explanation': f"Это неверно, так как в оригинале есть отрицание"
+        for sent in sentences:
+            doc = nlp(sent)
+            markers = [m for m in all_markers if m["sent_start"] == 0]
+            if markers:
+                chosen_marker = random.choice(markers)
+                modified = distort_span(doc, chosen_marker)
+                false_statements.append({
+                    "text": modified,
+                    "is_true": False,
+                    "original": sent,
                 })
-            else:
-                # Добавляем "не" для создания ложного утверждения
-                if len(words) > 1:
-                    # Вставляем "не" перед глаголом (упрощенно)
-                    verb_position = self._find_verb_position(words)
-                    if verb_position >= 0:
-                        words_copy = words.copy()
-                        words_copy.insert(verb_position, "не")
-                        false_stmt = ' '.join(words_copy)
-                        statements.append({
-                            'text': false_stmt,
-                            'is_true': False,
-                            'explanation': "Это неверно, так как в оригинале нет отрицания"
-                        })
 
-        # Ограничиваем количество утверждений (максимум 5)
+        return false_statements
+
+    def _generate_statements(
+        self,
+        sentences: List[str],
+        all_markers: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """
+        Combine true and false statements, shuffle, and limit total count.
+
+        Args:
+            sentences (list[str]): Input sentences.
+            all_markers (list[dict]): Markers from those sentences.
+
+        Returns:
+            list[dict]: Mixed list of statements (True/False).
+        """
+        true_statements = self._get_true_statements(sentences)
+        false_statements = self._get_false_statements(sentences, all_markers)
+
+        statements = true_statements + false_statements
+        random.shuffle(statements)
         return statements[:5]
 
-    def _extract_main_idea(self, sentence: str, words: List[str]) -> str:
-        """Извлекает основную мысль предложения (упрощенно)"""
-        if len(words) < 3:
-            return sentence
-
-        # Берем подлежащее и сказуемое (упрощенно)
-        # В реальном проекте здесь должен быть синтаксический анализ
-        potential_subjects = ["я", "ты", "он", "она", "оно", "мы", "вы", "они", "это", "кто", "что"]
-
-        subject = None
-        for word in words:
-            if word.lower() in potential_subjects:
-                subject = word
-                break
-
-        if subject and len(words) > 2:
-            # Берем подлежащее и следующие 2-3 слова
-            subject_index = words.index(subject)
-            end_index = min(subject_index + 3, len(words))
-            return ' '.join(words[subject_index:end_index])
-
-        return sentence
-
-    def _find_verb_position(self, words: List[str]) -> int:
-        """Находит позицию глагола в списке слов (упрощенно)"""
-        # Список частотных глаголов для демо
-        common_verbs = ["есть", "быть", "стал", "является", "находится", "работает", "учится",
-                        "говорит", "думает", "знает", "хочет", "может", "должен", "любит"]
-
-        for i, word in enumerate(words):
-            if word.lower() in common_verbs or word.lower().endswith(('ть', 'ет', 'ит', 'ют', 'ут')):
-                return i
-
-        return -1
-
     def validate_answer(self, user_answer: List[bool]) -> bool:
-        """Проверяет ответы на утверждения"""
+        """
+        Check if the user’s answer matches the internal key.
+
+        Args:
+            user_answer (list[bool]): User’s True/False choices.
+
+        Returns:
+            bool: True if the answer matches the key.
+        """
         if not isinstance(user_answer, list) or len(user_answer) != len(self.statements):
             return False
-
         return user_answer == self.answer
-
-    def get_explanations(self) -> List[str]:
-        """Возвращает пояснения к каждому утверждению"""
-        return [stmt['explanation'] for stmt in self.statements]
