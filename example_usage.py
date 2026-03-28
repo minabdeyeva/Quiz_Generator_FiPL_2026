@@ -1,5 +1,5 @@
-from core.document_loader import DocumentLoader
-from core.text_processor import TextProcessor
+from src.core import DocumentLoader
+from src.core import TextProcessor
 
 if __name__ == "__main__":
     # Create a loader with a list of files (replace with actual paths)

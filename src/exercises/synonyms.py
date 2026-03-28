@@ -2,8 +2,8 @@ import random
 import re
 from typing import Any, Dict, List
 
-from core.word_vectorizer import Word2VecAnalyzer
-from exercises.base import BaseExercise
+from src.core.word_vectorizer import Word2VecAnalyzer
+from src.exercises.base import BaseExercise
 
 
 class SynonymsExercise(BaseExercise):
