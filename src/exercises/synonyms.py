@@ -22,7 +22,10 @@ class SynonymsExercise(BaseExercise):
     def set_analyzer(self, analyzer):
         self.analyzer = analyzer
 
-    def _parse_tagged_item(self, item: Union[Dict, Tuple, List, str]) -> Tuple[str, str]:
+    def _parse_tagged_item(
+        self,
+        item: Union[Dict, Tuple, List, str],
+    ) -> Tuple[str, str]:
         """
         Универсальный парсер для разных форматов tagged_lemmas.
         Возвращает кортеж (слово, POS).
@@ -68,7 +71,10 @@ class SynonymsExercise(BaseExercise):
 
         if not allowed_indices:
             # Fallback: берём любое длинное слово
-            allowed_indices = [i for i, word in enumerate(words) if len(word) >= self.MIN_WORD_LENGTH]
+            allowed_indices = [
+                i for i, word in enumerate(words)
+                if len(word) >= self.MIN_WORD_LENGTH
+            ]
 
         if not allowed_indices:
             raise ValueError("Нет подходящих слов для упражнения")
@@ -89,7 +95,11 @@ class SynonymsExercise(BaseExercise):
 
         # Получаем синонимы
         try:
-            similar = self.analyzer.get_similar_words(target_word, topn=5, pos=target_pos)
+            similar = self.analyzer.get_similar_words(
+                target_word,
+                topn=5,
+                pos=target_pos,
+            )
         except Exception as e:
             print(f"⚠ Ошибка поиска синонимов: {e}")
             similar = []
@@ -110,7 +120,10 @@ class SynonymsExercise(BaseExercise):
 
         # Fallback если нет синонимов
         if not similar:
-            similar = [w for w in words if w != target_word and len(w) >= self.MIN_WORD_LENGTH][:5]
+            similar = [
+                w for w in words
+                if w != target_word and len(w) >= self.MIN_WORD_LENGTH
+            ][:5]
 
         if not similar:
             raise ValueError("Не найдено слов для вариантов ответа")

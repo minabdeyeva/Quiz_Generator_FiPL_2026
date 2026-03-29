@@ -9,7 +9,6 @@ from src.exercises.word_order import WordOrderExercise
 from src.exercises.fill_blanks import FillBlanksExercise
 from src.exercises.synonyms import SynonymsExercise
 from src.exercises.matching import MatchingExercise
-from src.exercises.true_false import TrueFalseExercise
 from src.formatters.docx_formatter import DocxFormatter
 
 
@@ -32,8 +31,7 @@ class ExerciseGenerator:
             'word_order': WordOrderExercise,
             'fill_blanks': FillBlanksExercise,
             'multiple_choice': SynonymsExercise,
-            'matching': MatchingExercise,
-            'true_false': TrueFalseExercise
+            'matching': MatchingExercise
         }
 
     def load_texts(self, file_paths: List[str]) -> None:
@@ -56,7 +54,9 @@ class ExerciseGenerator:
     def _process_texts(self) -> None:
         """Обрабатывает все загруженные тексты"""
         all_text = ' '.join(self.texts)
-        self.processed_sentences = self.text_processor.get_sentences_with_metadata(all_text)
+        self.processed_sentences = (
+            self.text_processor.get_sentences_with_metadata(all_text)
+        )
 
         for sentence in self.processed_sentences:
             self.all_words.extend(sentence['words'])

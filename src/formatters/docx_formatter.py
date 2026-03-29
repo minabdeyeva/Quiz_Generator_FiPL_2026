@@ -1,6 +1,5 @@
 from typing import List, Any
 from docx import Document
-from docx.shared import Pt, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 
@@ -71,7 +70,9 @@ class DocxFormatter:
         for i, ex in enumerate(exercises, 1):
             # Ответ на упражнение
             p = self.document.add_paragraph()
-            p.add_run(f"Упражнение {i} ({self._get_type_name(ex.__class__.__name__)}): ").bold = True
+            type_name = self._get_type_name(ex.__class__.__name__)
+            label = f"Упражнение {i} ({type_name}): "
+            p.add_run(label).bold = True
 
             # Форматируем ответ в зависимости от типа упражнения
             if ex.__class__.__name__ == 'MatchingExercise':
@@ -82,13 +83,15 @@ class DocxFormatter:
                 p.add_run(str(ex.answer))
 
             # Добавляем пояснения для TrueFalseExercise
-            if ex.__class__.__name__ == 'TrueFalseExercise' and hasattr(ex, 'get_explanations'):
+            is_tf = ex.__class__.__name__ == 'TrueFalseExercise'
+            if is_tf and hasattr(ex, 'get_explanations'):
                 explanations = ex.get_explanations()
                 if explanations:
                     p = self.document.add_paragraph()
                     p.add_run("Пояснения:").bold = True
                     for j, explanation in enumerate(explanations, 1):
-                        self.document.add_paragraph(f"{j}. {explanation}", style='List Bullet')
+                        bullet = f"{j}. {explanation}"
+                        self.document.add_paragraph(bullet, style='List Bullet')
 
             # Разделитель между упражнениями
             self.document.add_paragraph()
@@ -131,11 +134,14 @@ class DocxFormatter:
             p.add_run("Найдите соответствия среди определений:").bold = True
 
             for idx, definition in enumerate(exercise.right_column, 1):
-                self.document.add_paragraph(f"{chr(64 + idx)}. {definition}", style='List Bullet')
+                letter = chr(64 + idx)
+                line = f"{letter}. {definition}"
+                self.document.add_paragraph(line, style='List Bullet')
 
         # Добавляем инструкцию
         self.document.add_paragraph()
-        self.document.add_paragraph("Запишите соответствия в формате: 1-А, 2-В и т.д.")
+        hint = "Запишите соответствия в формате: 1-А, 2-В и т.д."
+        self.document.add_paragraph(hint)
 
     def _format_truefalse_exercise(self, exercise) -> None:
         """Форматирует упражнение Верно/Неверно с таблицей"""
@@ -170,4 +176,5 @@ class DocxFormatter:
             paragraph.add_run("\n")
             for idx, stmt in enumerate(exercise.statements, 1):
                 answer = "Верно" if stmt['is_true'] else "Неверно"
-                paragraph.add_run(f"{idx}. {answer}\n")
+                line = f"{idx}. {answer}\n"
+                paragraph.add_run(line)

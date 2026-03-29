@@ -18,7 +18,11 @@ class Word2VecAnalyzer:
         self.language = language
         self._model_loaded = False
 
-    def train_on_texts(self, sentences: List[List[str]], vector_size: int = 200) -> 'Word2VecAnalyzer':
+    def train_on_texts(
+        self,
+        sentences: List[List[str]],
+        vector_size: int = 200,
+    ) -> 'Word2VecAnalyzer':
         """
         Train a new Word2Vec model on the provided tokenized sentences.
 
@@ -33,7 +37,8 @@ class Word2VecAnalyzer:
         valid_sentences = [sent for sent in sentences if sent and len(sent) > 0]
 
         if len(valid_sentences) < 10:
-            print(f"⚠ Предупреждение: Мало данных для обучения ({len(valid_sentences)} предложений)")
+            n = len(valid_sentences)
+            print(f"⚠ Предупреждение: Мало данных для обучения ({n} предложений)")
 
         print("ℹ Обучение модели Word2Vec...")
         print(f"   Предложений: {len(valid_sentences)}")
@@ -58,7 +63,10 @@ class Word2VecAnalyzer:
 
         return self
 
-    def build_pos_vectors(self, tagged_words: List[Union[Dict[str, str], Tuple[str, str]]]) -> None:
+    def build_pos_vectors(
+        self,
+        tagged_words: List[Union[Dict[str, str], Tuple[str, str]]],
+    ) -> None:
         """
         Build a dictionary mapping POS tags to word vectors.
 
@@ -89,7 +97,7 @@ class Word2VecAnalyzer:
                     self.pos_vectors[pos][word] = self.model.wv[word]
                     processed_count += 1
 
-            except Exception as e:
+            except Exception:
                 # Пропускаем проблемные элементы
                 continue
 
@@ -139,7 +147,8 @@ class Word2VecAnalyzer:
                         norm_cand = np.linalg.norm(cand_vector)
 
                         if norm_target > 0 and norm_cand > 0:
-                            sim = np.dot(target_vector, cand_vector) / (norm_target * norm_cand)
+                            dot = np.dot(target_vector, cand_vector)
+                            sim = dot / (norm_target * norm_cand)
                             similarities.append((cand_word, float(sim)))
 
                 # Сортировка по убыванию сходства

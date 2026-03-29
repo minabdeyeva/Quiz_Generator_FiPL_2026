@@ -47,16 +47,20 @@ replacements = {
     }
 }
 
-def find_markers_in_doc(doc: spacy.tokens.Doc, matcher: Matcher) -> List[Dict[str, Any]]:
+
+def find_markers_in_doc(
+    doc: spacy.tokens.Doc,
+    matcher: Matcher,
+) -> List[Dict[str, Any]]:
     """
-    Find pattern‑based fragments (quantifiers, temporal markers etc.) in a spaCy Doc.
+    Find pattern-based fragments (quantifiers, temporal markers) in a spaCy Doc.
 
     Args:
         doc (spacy.tokens.Doc): Input text wrapped as a spaCy Doc.
         matcher (Matcher): Matcher with defined patterns.
 
     Returns:
-        list[dict]: List of found fragments with label, text, offsets, and sentence bounds.
+        list[dict]: Fragments with label, text, offsets, sentence bounds.
     """
     results = []
     matches = matcher(doc)
@@ -72,6 +76,7 @@ def find_markers_in_doc(doc: spacy.tokens.Doc, matcher: Matcher) -> List[Dict[st
             "sent_end": span.sent.end,
         })
     return results
+
 
 def distort_span(sent_span: spacy.tokens.Span, marker: Dict[str, Any]) -> str:
     """
@@ -150,7 +155,7 @@ class TrueFalseExercise(BaseExercise):
         Generate True/False statements from context.
 
         Args:
-            context (dict): Must contain "sentence", optionally "words", "lemmas", "other_words".
+            context (dict): Must include "sentence"; optional words/lemmas/other_words.
 
         Raises:
             ValueError: If "sentence" is missing or empty.
@@ -161,7 +166,9 @@ class TrueFalseExercise(BaseExercise):
         sentence = context.get("sentence", "")
 
         if not sentence or not sentence.strip():
-            raise ValueError("Отсутствует 'sentence' в context для TrueFalseExercise")
+            raise ValueError(
+                "Отсутствует 'sentence' в context для TrueFalseExercise"
+            )
 
         sentences = [sentence]
 
@@ -257,14 +264,16 @@ class TrueFalseExercise(BaseExercise):
 
     def validate_answer(self, user_answer: List[bool]) -> bool:
         """
-        Check if the user’s answer matches the internal key.
+        Check whether the user answer matches the internal key.
 
         Args:
-            user_answer (list[bool]): User’s True/False choices.
+            user_answer (list[bool]): User True/False choices.
 
         Returns:
             bool: True if the answer matches the key.
         """
-        if not isinstance(user_answer, list) or len(user_answer) != len(self.statements):
+        if not isinstance(user_answer, list):
+            return False
+        if len(user_answer) != len(self.statements):
             return False
         return user_answer == self.answer

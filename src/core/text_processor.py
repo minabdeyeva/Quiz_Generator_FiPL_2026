@@ -1,6 +1,6 @@
 import re
 import nltk
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 import spacy
 nlp = spacy.load('fr_core_news_sm')
 
@@ -55,7 +55,6 @@ class TextProcessor:
             return doc[0].lemma_
         return word
 
-
     def get_pos_tag(self, word: str) -> str:
         """Return coarse-grained POS tag for a single word (e.g., NOUN, VERB)."""
         if self.nlp:
@@ -80,7 +79,8 @@ class TextProcessor:
                 'id': i,
                 'text': sentence,
                 'words': words,
-                'tagged_lemmas': tagged_lemmas,   # new field, replaces plain lemmas list
+                # new field, replaces plain lemmas list
+                'tagged_lemmas': tagged_lemmas,
                 'word_count': len(words)
             })
 

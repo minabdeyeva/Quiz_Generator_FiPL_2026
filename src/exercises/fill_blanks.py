@@ -17,7 +17,10 @@ class FillBlanksExercise(BaseExercise):
         self.question: str = ""
         self.analyzer: Word2VecAnalyzer = Word2VecAnalyzer()
 
-    def _parse_tagged_item(self, item: Union[Dict, Tuple, List, str]) -> Tuple[str, str]:
+    def _parse_tagged_item(
+        self,
+        item: Union[Dict, Tuple, List, str],
+    ) -> Tuple[str, str]:
         """Универсально извлекает (lemma, POS) из разных форматов tagged_lemmas."""
         if isinstance(item, dict) and item:
             word = list(item.keys())[0]
@@ -51,7 +54,10 @@ class FillBlanksExercise(BaseExercise):
             if pos in self.ALLOWED_POS and len(words[i]) >= self.MIN_WORD_LENGTH
         ]
         if not allowed_indices:
-            allowed_indices = [i for i, w in enumerate(words) if len(w) >= self.MIN_WORD_LENGTH]
+            allowed_indices = [
+                i for i, w in enumerate(words)
+                if len(w) >= self.MIN_WORD_LENGTH
+            ]
         if not allowed_indices:
             raise ValueError("No suitable words found for fill-blanks.")
 
@@ -97,7 +103,12 @@ class FillBlanksExercise(BaseExercise):
             raise ValueError("Not enough answer options for fill-blanks.")
 
         random.shuffle(deduplicated_options)
-        sentence_blank = re.sub(rf'\b{re.escape(blank_word)}\b', '___', original_sentence, count=1)
+        sentence_blank = re.sub(
+            rf'\b{re.escape(blank_word)}\b',
+            '___',
+            original_sentence,
+            count=1,
+        )
 
         self.question = sentence_blank
         self.answer = blank_word
