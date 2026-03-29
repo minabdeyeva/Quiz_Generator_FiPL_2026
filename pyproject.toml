@@ -123,11 +123,7 @@ src_paths = [
 
 [tool.mypy]
 python_version = "3.11"
-exclude = [
-    "venv*",
-    "tests/",
-    "docs/"
-]
+exclude = "^(venv.*|tests/|docs/)"
 disallow_untyped_defs = true
 disallow_any_unimported = true
 no_implicit_optional = true
@@ -148,14 +144,17 @@ module = [
     "evaluate",
     "transformers",
     "torch.*",
+    "tests.*",
+    "conftest"
 ]
+ignore_errors = true
 ignore_missing_imports = true
 
 [tool.pylint.main]
 fail-under = 10.0
 jobs = 1
 py-version = "3.11"
-exclude = ["tests/"]
+ignore = ["tests"]
 
 [tool.pylint.format]
 max-line-length = 100
