@@ -1,13 +1,15 @@
-from typing import List, Any
+from typing import Any, List, Optional
+
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.text.paragraph import Paragraph
 
 
 class DocxFormatter:
     """Класс для форматирования документов в формате docx"""
 
-    def __init__(self):
-        self.document = None
+    def __init__(self) -> None:
+        self.document: Optional[Document] = None
 
     def save_exercises(self, exercises: List[Any], filename: str) -> None:
         """Сохраняет упражнения в docx файл"""
@@ -109,7 +111,7 @@ class DocxFormatter:
         }
         return names.get(class_name, class_name)
 
-    def _format_matching_exercise(self, exercise) -> None:
+    def _format_matching_exercise(self, exercise: Any) -> None:
         """Форматирует упражнение на соответствие с таблицей"""
         # Создаем таблицу для левого столбца
         if hasattr(exercise, 'left_column') and exercise.left_column:
@@ -143,7 +145,7 @@ class DocxFormatter:
         hint = "Запишите соответствия в формате: 1-А, 2-В и т.д."
         self.document.add_paragraph(hint)
 
-    def _format_truefalse_exercise(self, exercise) -> None:
+    def _format_truefalse_exercise(self, exercise: Any) -> None:
         """Форматирует упражнение Верно/Неверно с таблицей"""
         if hasattr(exercise, 'statements') and exercise.statements:
             # Создаем таблицу для утверждений
@@ -163,14 +165,22 @@ class DocxFormatter:
                 row_cells[1].text = stmt['text']
                 row_cells[2].text = "_____"
 
-    def _format_matching_answer_inline(self, exercise, paragraph) -> None:
+    def _format_matching_answer_inline(
+        self,
+        exercise: Any,
+        paragraph: Paragraph,
+    ) -> None:
         """Форматирует ответ для matching упражнения в одну строку"""
         if hasattr(exercise, 'pairs'):
             paragraph.add_run("\n")
             for k, v in exercise.pairs.items():
                 paragraph.add_run(f"{k} → {v}\n")
 
-    def _format_truefalse_answer(self, exercise, paragraph) -> None:
+    def _format_truefalse_answer(
+        self,
+        exercise: Any,
+        paragraph: Paragraph,
+    ) -> None:
         """Форматирует ответ для true/false упражнения"""
         if hasattr(exercise, 'statements') and exercise.statements:
             paragraph.add_run("\n")

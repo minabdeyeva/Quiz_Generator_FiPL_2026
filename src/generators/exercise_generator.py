@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List, Type, Union
 import random
 
 from src.core.document_loader import DocumentLoader
@@ -10,6 +10,13 @@ from src.exercises.fill_blanks import FillBlanksExercise
 from src.exercises.synonyms import SynonymsExercise
 from src.exercises.matching import MatchingExercise
 from src.formatters.docx_formatter import DocxFormatter
+
+ExerciseImpl = Union[
+    Type[WordOrderExercise],
+    Type[FillBlanksExercise],
+    Type[SynonymsExercise],
+    Type[MatchingExercise],
+]
 
 
 class ExerciseGenerator:
@@ -26,12 +33,12 @@ class ExerciseGenerator:
         self.formatter = DocxFormatter()
         self.analyzer = Word2VecAnalyzer(language="french")
 
-        # Регистрируем доступные типы упражнений
-        self.exercise_types = {
+        # Регистрируем доступные типы упражнений (только конкретные классы)
+        self.exercise_types: Dict[str, ExerciseImpl] = {
             'word_order': WordOrderExercise,
             'fill_blanks': FillBlanksExercise,
             'multiple_choice': SynonymsExercise,
-            'matching': MatchingExercise
+            'matching': MatchingExercise,
         }
 
     def load_texts(self, file_paths: List[str]) -> None:

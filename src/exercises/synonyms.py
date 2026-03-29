@@ -19,7 +19,7 @@ class SynonymsExercise(BaseExercise):
         self.question: str = ""
         self.analyzer: Word2VecAnalyzer = Word2VecAnalyzer()
 
-    def set_analyzer(self, analyzer):
+    def set_analyzer(self, analyzer: Word2VecAnalyzer) -> None:
         self.analyzer = analyzer
 
     def _parse_tagged_item(

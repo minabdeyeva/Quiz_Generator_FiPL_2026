@@ -1,7 +1,8 @@
 import os
+from typing import Any, List, Dict, Optional, Tuple, Union
+
 import numpy as np
 from gensim.models import Word2Vec
-from typing import List, Dict, Optional, Tuple, Union
 
 
 class Word2VecAnalyzer:
@@ -13,7 +14,8 @@ class Word2VecAnalyzer:
 
         :param language: Язык текстов (для сообщений)
         """
-        self.model: Optional[Word2Vec] = None
+        # gensim Word2Vec is untyped in stubs; keep explicit Any for mypy.
+        self.model: Optional[Any] = None
         self.pos_vectors: Dict[str, Dict[str, np.ndarray]] = {}
         self.language = language
         self._model_loaded = False
