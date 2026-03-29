@@ -160,6 +160,13 @@ ignore-patterns = ["^tests/.*"]
 max-line-length = 100
 exclude = "tests/"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["venv*", "build", ".git", "dist", "output", "src"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
 [tool.logging]
 version = 1
 disable_existing_loggers = true
