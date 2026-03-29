@@ -10,6 +10,7 @@ class SynonymsExercise(BaseExercise):
     """Exercise where user picks a synonym of a highlighted word."""
 
     ALLOWED_POS = {'NOUN', 'VERB', 'ADJ'}
+    MIN_WORD_LENGTH = 4
 
     def __init__(self, exercise_id: str):
         super().__init__(exercise_id, "Выберите синоним к выделенному слову")
@@ -62,12 +63,12 @@ class SynonymsExercise(BaseExercise):
         # Фильтруем слова с разрешёнными частями речи
         allowed_indices = [
             i for i, (word, pos) in enumerate(parsed_items)
-            if pos in self.ALLOWED_POS and len(word) > 3
+            if pos in self.ALLOWED_POS and len(word) >= self.MIN_WORD_LENGTH
         ]
 
         if not allowed_indices:
             # Fallback: берём любое длинное слово
-            allowed_indices = [i for i, word in enumerate(words) if len(word) > 3]
+            allowed_indices = [i for i, word in enumerate(words) if len(word) >= self.MIN_WORD_LENGTH]
 
         if not allowed_indices:
             raise ValueError("Нет подходящих слов для упражнения")
@@ -93,22 +94,59 @@ class SynonymsExercise(BaseExercise):
             print(f"⚠ Ошибка поиска синонимов: {e}")
             similar = []
 
-        # Убираем само целевое слово
-        similar = [w for w in similar if w.lower() != target_word.lower()]
+        # Убираем само целевое слово и дубли
+        unique_similar: List[str] = []
+        for candidate in similar:
+            if not isinstance(candidate, str):
+                continue
+            normalized = candidate.strip()
+            if (
+                normalized
+                and normalized.lower() != target_word.lower()
+                and normalized.lower() not in {w.lower() for w in unique_similar}
+            ):
+                unique_similar.append(normalized)
+        similar = unique_similar
 
         # Fallback если нет синонимов
         if not similar:
-            similar = [w for w in words if w != target_word and len(w) > 3][:5]
+            similar = [w for w in words if w != target_word and len(w) >= self.MIN_WORD_LENGTH][:5]
 
         if not similar:
             raise ValueError("Не найдено слов для вариантов ответа")
 
-        # Формируем варианты ответа
-        correct = similar[0] if similar else target_word
-        distractors = similar[1:3] if len(similar) > 1 else []
+        # Формируем варианты ответа:
+        # correct = лучший найденный синоним, остальные - дистракторы
+        correct = similar[0]
+        distractors = similar[1:4]
 
-        self.word_bank = [correct] + distractors
-        random.shuffle(self.word_bank)
+        # При нехватке вариантов добавляем другие слова из текущего предложения
+        if len(distractors) < 2:
+            extra_candidates = [
+                w for w in words
+                if w.lower() not in {target_word.lower(), correct.lower()}
+                and len(w) >= self.MIN_WORD_LENGTH
+            ]
+            for w in extra_candidates:
+                if w.lower() not in {d.lower() for d in distractors}:
+                    distractors.append(w)
+                if len(distractors) >= 3:
+                    break
+
+        options = [correct] + distractors[:3]
+        # Стараемся оставить хотя бы 3 уникальных варианта
+        deduplicated_options: List[str] = []
+        for option in options:
+            if option.lower() not in {o.lower() for o in deduplicated_options}:
+                deduplicated_options.append(option)
+
+        if len(deduplicated_options) < 2:
+            raise ValueError("Недостаточно вариантов для упражнения на синонимы")
+
+        random.shuffle(deduplicated_options)
+
+        self.word_bank = deduplicated_options
+        self.options = deduplicated_options
 
         self.question = highlighted_sentence
         self.answer = correct
