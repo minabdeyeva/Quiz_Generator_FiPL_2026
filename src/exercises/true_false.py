@@ -1,14 +1,14 @@
 """
-Генератор упражнений «верно / неверно» на основе одного предложения (spaCy + T5).
+The module creates True-False Statements.
 """
 
 import random
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, cast
 
 import spacy
 from spacy.matcher import Matcher
 from spacy.tokens import Doc, Span
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, PreTrainedModel, PreTrainedTokenizerBase
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 from src.exercises.base import BaseExercise
 
@@ -52,16 +52,12 @@ replacements = {
 }
 
 
-def find_markers_in_doc(
-    doc: Doc,
-    matcher: Union[Matcher, Callable[[Doc], Any]],
-) -> List[Dict[str, Any]]:
+def find_markers_in_doc(doc: Doc) -> List[Dict[str, Any]]:
     """
     Find pattern-based fragments (quantifiers, temporal markers) in a spaCy Doc.
 
     Args:
-        doc: spaCy document.
-        matcher: spaCy Matcher or callable ``doc -> matches`` (for tests).
+        doc (spacy.tokens.Doc): Input text wrapped as a spaCy Doc.
 
     Returns:
         List of dicts with label, text, offsets, and sentence bounds.
@@ -104,27 +100,23 @@ def distort_span(sent_span: Span, marker: Dict[str, Any]) -> str:
     return f"{left.strip()} {new_word} {right.strip()}".strip()
 
 
-def paraphrase(
-    model: PreTrainedModel,
-    tokenizer: PreTrainedTokenizerBase,
-    sentence: str,
-    num_return_sequences: int = 1,
-) -> List[str]:
-    """
-    Generate paraphrased versions of a French sentence using a T5-style model.
+def paraphrase(model: Any, tokenizer: Any, sentence: str) -> str:
+    input_text = f"Reformule la phrase suivante en français sans ajouter ni supprimer \
+    d'information : {sentence}"
 
-    Returns:
-        List of paraphrases (length matches ``num_return_sequences`` when possible).
-    """
-    input_text = (
-        "Reformule la phrase suivante en français sans ajouter ni supprimer "
-        f"d'information : {sentence}"
-    )
-    inputs = tokenizer(
+    inputs = cast(Dict[str, Any], tokenizer(
         input_text,
         return_tensors="pt",
         truncation=True,
-        max_length=128,
+        max_length=128
+    ))
+
+    outputs = model.generate(
+        **inputs,
+        max_new_tokens=64,
+        num_beams=3,
+        do_sample=False,
+        pad_token_id=tokenizer.eos_token_id
     )
 
     pad_id = getattr(tokenizer, "eos_token_id", None) or getattr(
@@ -162,8 +154,10 @@ class TrueFalseExercise(BaseExercise):
     """
     True/False (Vrai/Faux) exercise: one sentence, true (paraphrase) and false variants.
     """
-
-    def __init__(self, exercise_id: str) -> None:
+    def __init__(self, exercise_id: str):
+        """
+        Initialize a TrueFalse exercise.
+        """
         super().__init__(exercise_id, "Определите, верны ли утверждения (Vrai / Faux)")
         self.statements: List[Dict[str, Any]] = []
         self.question: Optional[str] = None
@@ -178,11 +172,9 @@ class TrueFalseExercise(BaseExercise):
         doc = nlp(sentence)
         all_markers = find_markers_in_doc(doc, tfs_matcher)
 
-        sents_list = [sent for sent in doc.sents if sent.text.strip()]
-        if not sents_list:
-            sentences: List[Span] = [doc[0 : len(doc)]]
-        else:
-            sentences = cast(List[Span], sents_list)
+        sentences = [sent for sent in doc.sents if sent.text.strip()]
+        if not sentences:
+            sentences = [doc[:]]
 
         self.statements = self._generate_statements(sentences, all_markers)
 
@@ -192,8 +184,17 @@ class TrueFalseExercise(BaseExercise):
 
         self.answer = [stmt["is_true"] for stmt in self.statements]
 
-    def _get_true_statements(self, sentences: List[Any]) -> List[Dict[str, Any]]:
-        true_statements: List[Dict[str, Any]] = []
+    def _get_true_statements(self, sentences: List[Span]) -> List[Dict[str, Any]]:
+        """
+        Create true statements by paraphrasing input sentences.
+
+        Args:
+            sentences (list[str]): List of sentences.
+
+        Returns:
+            list[dict]: List of true statements with text, is_true, and original.
+        """
+        true_statements = []
         for sent in sentences[:3]:
             if isinstance(sent, str):
                 sent_text = sent.strip()
@@ -215,12 +216,19 @@ class TrueFalseExercise(BaseExercise):
             })
         return true_statements
 
-    def _get_false_statements(
-        self,
-        sentences: List[Any],
-        all_markers: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
-        false_statements: List[Dict[str, Any]] = []
+    def _get_false_statements(self, sentences: List[Span], all_markers: List[Dict[str, Any]])\
+            -> List[Dict[str, Any]]:
+        """
+        Create false statements by changing one marked fragment per sentence.
+
+        Args:
+            sentences (list[str]): List of sentences.
+            all_markers (list[dict]): Markers found in those sentences.
+
+        Returns:
+            list[dict]: List of false statements with text, is_true, and original.
+        """
+        false_statements = []
 
         for sent in sentences:
             if isinstance(sent, str):
@@ -253,11 +261,18 @@ class TrueFalseExercise(BaseExercise):
 
         return false_statements
 
-    def _generate_statements(
-        self,
-        sentences: List[Any],
-        all_markers: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+    def _generate_statements(self, sentences: List[Span], all_markers: List[Dict[str, Any]])\
+            -> List[Dict[str, Any]]:
+        """
+        Combine true and false statements, shuffle, and limit total count.
+
+        Args:
+            sentences (list[str]): Input sentences.
+            all_markers (list[dict]): Markers from those sentences.
+
+        Returns:
+            list[dict]: Mixed list of statements (True/False).
+        """
         true_statements = self._get_true_statements(sentences)
         false_statements = self._get_false_statements(sentences, all_markers)
 
