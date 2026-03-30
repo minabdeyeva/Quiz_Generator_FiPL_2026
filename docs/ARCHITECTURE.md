@@ -7,7 +7,7 @@ exercise_generator/
 ├── .gitignore                   
 ├── .github/
 │   └── workflows/
-│       └── ci.yml               
+│       └── ci_pipeline.yml             
 │
 ├── src/
 │   └── exercise_generator/
@@ -42,16 +42,22 @@ exercise_generator/
 │
 ├── tests/
 │   ├── __init__.py
-│   ├── test_module1.py                 # Тесты для module1
-│   ├── test_module2.py                 # Тесты для module2
-│   └── conftest.py                     # Конфигурация pytest
+│   ├── test_base_module.py             # Тесты для base.py
+│   ├── test_document_loader.py         # Тесты для document_loader.py
+│   ├── test_docx_formatter.py          # Тесты для docx_formatter.py
+│   ├── test_exercise_generator.py      # Тесты для exercise_generator.py
+│   ├── test_fill_blanks_exercise.py    # Тесты для fill_blanks.py
+│   ├── test_matching_exercise.py       # Тесты для matching.py
+│   ├── test_run_generator.py           # Тесты для run_generator.py
+│   ├── test_synonyms_exercise.py       # Тесты для synonyms.py
+│   ├── test_text_processor.py          # Тесты для text_processor
+│   ├── test_true_false_exercise.py     # Тесты для true_false.py
+│   ├── test_word_order.py              # Тесты для word_order.py 
+│   └── test_word_vectorizer.py         # Тесты для word_vectorizer.py
 │
-├── docs/
-│   ├── README.md                       # Техническая документация
-│   └── ARCHITECTURE.md                 # Архитектура проекта
-│
-├── .pylintrc                    
-└── pytest.ini
+└── docs/
+    ├── README.md                       # Техническая документация
+    └── ARCHITECTURE.md                 # Архитектура проекта
 ```
 [описание классов и модулей]
 ## Диаграммы

@@ -8,15 +8,15 @@ from typing import Any, Dict, List, Tuple, Union
 
 from flask import Flask, Response, jsonify, render_template, request, session
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
 from src.core.text_processor import TextProcessor
 from src.core.word_vectorizer import Word2VecAnalyzer
 from src.exercises.fill_blanks import FillBlanksExercise
 from src.exercises.synonyms import SynonymsExercise
 from src.exercises.word_order import WordOrderExercise
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 app = Flask(__name__)
 app.secret_key = 'quiz-generator-web-secret'
