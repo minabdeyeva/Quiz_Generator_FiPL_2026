@@ -110,7 +110,8 @@ def paraphrase(model, tokenizer, sentence: str) -> str:
     Returns:
         str: Paraphrased sentence.
     """
-    input_text = f"Reformule en français en gardant exactement le même sens : {sentence}"
+    input_text = f"Reformule la phrase suivante en français sans ajouter ni supprimer \
+    d'information : {sentence}"
     inputs = tokenizer(input_text, return_tensors="pt", truncation=True, max_length=128)
 
     outputs = model.generate(
