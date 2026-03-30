@@ -57,7 +57,6 @@ def find_markers_in_doc(doc: spacy.tokens.Doc) -> List[Dict[str, Any]]:
 
     Args:
         doc (spacy.tokens.Doc): Input text wrapped as a spaCy Doc.
-        matcher (Matcher): Matcher with defined patterns.
 
     Returns:
         list[dict]: List of found fragments with label, text, offsets, and sentence bounds.
@@ -134,9 +133,6 @@ class TrueFalseExercise(BaseExercise):
     def __init__(self, exercise_id: str):
         """
         Initialize a TrueFalse exercise.
-
-        Args:
-            exercise_id (str): Unique identifier of the exercise.
         """
         super().__init__(exercise_id, "Определите, верны ли утверждения (Vrai / Faux)")
         self.statements: List[Dict[str, Any]] = []
@@ -234,7 +230,8 @@ class TrueFalseExercise(BaseExercise):
 
         return false_statements
 
-    def _generate_statements(self, sentences, all_markers: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _generate_statements(self, sentences, all_markers: List[Dict[str, Any]])\
+            -> List[Dict[str, Any]]:
         """
         Combine true and false statements, shuffle, and limit total count.
 
