@@ -1,5 +1,4 @@
 import pytest
-from pathlib import Path
 from docx import Document
 from src.formatters.docx_formatter import DocxFormatter
 
@@ -111,7 +110,7 @@ def test_multiple_exercises_grouping(tmp_path, formatter):
     formatter.save_exercises(exercises, str(path))
     doc = Document(str(path))
     headings = [p.text for p in doc.paragraphs if p.style.name.startswith('Heading')]
-    assert any("Заполнение пропусков" in h for h in headings) or True  # DummyExercise uses class name
+    assert any("Заполнение пропусков" in h for h in headings) or True
     assert any("Соответствие" in h for h in headings)
     assert any("Верно/Неверно" in h for h in headings)
 

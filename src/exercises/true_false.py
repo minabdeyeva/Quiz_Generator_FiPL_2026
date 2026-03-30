@@ -1,5 +1,5 @@
 """
-hgcg
+The module creates True-False Statements.
 """
 
 import random
@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Optional
 
 import spacy
 from spacy.matcher import Matcher
+from spacy.tokens import Doc, Span
+from transformers import PreTrainedModel, PreTrainedTokenizer
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 from src.exercises.base import BaseExercise
@@ -97,7 +99,7 @@ def distort_span(sent_span: spacy.tokens.Span, marker: Dict[str, Any]) -> str:
     return f"{left.strip()} {new_word} {right.strip()}".strip()
 
 
-def paraphrase(model, tokenizer, sentence: str) -> str:
+def paraphrase(model: PreTrainedModel, tokenizer: PreTrainedTokenizer, sentence: str) -> str:
     """
     Generate paraphrased versions of a French sentence using a T5‑style model.
 
@@ -172,7 +174,7 @@ class TrueFalseExercise(BaseExercise):
 
         self.answer = [stmt["is_true"] for stmt in self.statements]
 
-    def _get_true_statements(self, sentences) -> List[Dict[str, Any]]:
+    def _get_true_statements(self, sentences: List[Span]) -> List[Dict[str, Any]]:
         """
         Create true statements by paraphrasing input sentences.
 
@@ -192,8 +194,8 @@ class TrueFalseExercise(BaseExercise):
             })
         return true_statements
 
-    def _get_false_statements(self, sentences, all_markers: List[Dict[str, Any]]) -> List[
-        Dict[str, Any]]:
+    def _get_false_statements(self, sentences: List[Span], all_markers: List[Dict[str, Any]])\
+            -> List[Dict[str, Any]]:
         """
         Create false statements by changing one marked fragment per sentence.
 
@@ -230,7 +232,7 @@ class TrueFalseExercise(BaseExercise):
 
         return false_statements
 
-    def _generate_statements(self, sentences, all_markers: List[Dict[str, Any]])\
+    def _generate_statements(self, sentences: List[Span], all_markers: List[Dict[str, Any]])\
             -> List[Dict[str, Any]]:
         """
         Combine true and false statements, shuffle, and limit total count.

@@ -1,11 +1,10 @@
-import pytest
-import random
 from src.exercises.true_false import (
     TrueFalseExercise,
     find_markers_in_doc,
     distort_span,
     paraphrase
 )
+
 
 # Helper classes for mocking NLP
 class FakeSpan:

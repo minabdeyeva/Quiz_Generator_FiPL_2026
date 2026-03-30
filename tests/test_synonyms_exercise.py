@@ -1,6 +1,6 @@
 import pytest
 from src.exercises.synonyms import SynonymsExercise
-from src.core.word_vectorizer import Word2VecAnalyzer
+
 
 class DummyAnalyzer:
     def __init__(self, similar_map=None):
@@ -9,9 +9,11 @@ class DummyAnalyzer:
     def get_similar_words(self, word):
         return self.similar_map.get(word, [])
 
+
 @pytest.fixture
 def exercise():
     return SynonymsExercise("test_id")
+
 
 @pytest.fixture
 def dummy_analyzer():
@@ -20,13 +22,14 @@ def dummy_analyzer():
         "rapide": ["vite", "prompt", "léger"],
     })
 
+
 def test_parse_tagged_item(exercise):
-    # Test different formats
     assert exercise._parse_tagged_item({"chat": "NOUN"}) == ("chat", "NOUN")
     assert exercise._parse_tagged_item(("dort", "VERB")) == ("dort", "VERB")
     assert exercise._parse_tagged_item(["noir", "ADJ"]) == ("noir", "ADJ")
     assert exercise._parse_tagged_item("chien") == ("chien", "UNKNOWN")
     assert exercise._parse_tagged_item(None) == ("None", "UNKNOWN")
+
 
 def test_generate_with_synonyms(exercise, dummy_analyzer):
     exercise.set_analyzer(dummy_analyzer)
@@ -47,6 +50,7 @@ def test_generate_with_synonyms(exercise, dummy_analyzer):
     assert "**" in exercise.question
     assert exercise.answer in exercise.word_bank
     assert len(exercise.word_bank) >= 2
+
 
 def test_generate_with_no_synonyms_fallback(exercise):
     class EmptyAnalyzer:
@@ -70,6 +74,7 @@ def test_generate_with_no_synonyms_fallback(exercise):
     assert exercise.answer in exercise.word_bank
     assert len(exercise.word_bank) >= 2
 
+
 def test_generate_no_long_words_raises(exercise):
     class EmptyAnalyzer:
         def get_similar_words(self, word, topn=5, pos=None):
@@ -83,6 +88,7 @@ def test_generate_no_long_words_raises(exercise):
     with pytest.raises(ValueError, match="Нет подходящих слов для упражнения"):
         exercise.generate(context)
 
+
 def test_generate_insufficient_options_raises(exercise):
     class Analyzer:
         def get_similar_words(self, word, topn=5, pos=None):
@@ -95,6 +101,7 @@ def test_generate_insufficient_options_raises(exercise):
     }
     with pytest.raises(ValueError, match="Недостаточно вариантов для упражнения на синонимы"):
         exercise.generate(context)
+
 
 def test_validate_answer(exercise, dummy_analyzer):
     exercise.set_analyzer(dummy_analyzer)

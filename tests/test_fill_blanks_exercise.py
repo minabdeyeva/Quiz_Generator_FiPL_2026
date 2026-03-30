@@ -1,5 +1,4 @@
 import pytest
-import random
 from src.exercises.fill_blanks import FillBlanksExercise
 
 
@@ -101,7 +100,6 @@ def test_generate_raises_no_suitable_words(exercise):
 
     with pytest.raises(ValueError, match="No suitable words found for fill-blanks."):
         exercise.generate(context)
-
 
 
 def test_generate_deduplicates_options(exercise):
