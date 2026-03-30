@@ -54,16 +54,16 @@ replacements = {
 
 def find_markers_in_doc(doc: Doc) -> List[Dict[str, Any]]:
     """
-    Find pattern-based fragments (quantifiers, temporal markers) in a spaCy Doc.
+    Find pattern‑based fragments (quantifiers, temporal markers etc.) in a spaCy Doc.
 
     Args:
         doc (spacy.tokens.Doc): Input text wrapped as a spaCy Doc.
 
     Returns:
-        List of dicts with label, text, offsets, and sentence bounds.
+        list[dict]: List of found fragments with label, text, offsets, and sentence bounds.
     """
-    results: List[Dict[str, Any]] = []
-    matches = matcher(doc)
+    results = []
+    matches = tfs_matcher(doc)
     for match_id, start, end in matches:
         span = doc[start:end]
         label = doc.vocab.strings[match_id]
@@ -72,22 +72,20 @@ def find_markers_in_doc(doc: Doc) -> List[Dict[str, Any]]:
             "text": span.text,
             "start": start,
             "end": end,
-            "sent_start": span.sent.start,
-            "sent_end": span.sent.end,
         })
     return results
 
 
-def distort_span(sent_span: Span, marker: Dict[str, Any]) -> str:
+def distort_span(sent_span: spacy.tokens.Span, marker: Dict[str, Any]) -> str:
     """
     Replace one phrase in a sentence based on a marker and predefined rules.
 
     Args:
-        sent_span: The sentence as a spaCy Span.
-        marker: Marker dictionary with label, text, and offsets.
+        sent_span (spacy.tokens.Span): The sentence as a spaCy Span.
+        marker (dict): Marker dictionary with label, text, and offsets.
 
     Returns:
-        Sentence with one fragment changed.
+        str: Sentence with one fragment changed.
     """
     label = marker["label"]
     old_text = marker["text"]
@@ -119,40 +117,14 @@ def paraphrase(model: Any, tokenizer: Any, sentence: str) -> str:
         pad_token_id=tokenizer.eos_token_id
     )
 
-    pad_id = getattr(tokenizer, "eos_token_id", None) or getattr(
-        tokenizer, "pad_token_id", None,
-    )
-    gen_kw: Dict[str, Any] = {
-        "max_new_tokens": 64,
-        "num_beams": 3,
-        "do_sample": False,
-        "num_return_sequences": num_return_sequences,
-    }
-    if pad_id is not None:
-        gen_kw["pad_token_id"] = pad_id
-
-    outputs = model.generate(**inputs, **gen_kw)
-
-    texts: List[str] = []
-    if hasattr(tokenizer, "batch_decode"):
-        decoded = tokenizer.batch_decode(outputs, skip_special_tokens=True)
-        texts = [d.strip() for d in decoded]
-    else:
-        for row in outputs:
-            decoded = tokenizer.decode(row, skip_special_tokens=True).strip()
-            texts.append(decoded)
-
-    if not texts or all(
-        not t or len(t) <= 5 or t == sentence.strip() for t in texts
-    ):
-        return [sentence] * max(1, num_return_sequences)
-
-    return texts[:num_return_sequences] if texts else [sentence]
+    result = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
+    return result if result and len(result) > 5 and result != sentence.strip() else sentence
 
 
 class TrueFalseExercise(BaseExercise):
     """
-    True/False (Vrai/Faux) exercise: one sentence, true (paraphrase) and false variants.
+    True‑False (Vrai/Faux) exercise generator operating on one sentence at a time.
+    Creates True (paraphrased) and False (slightly changed) statements.
     """
     def __init__(self, exercise_id: str):
         """
@@ -165,12 +137,24 @@ class TrueFalseExercise(BaseExercise):
         self.options = ["Верно", "Неверно"]
 
     def generate(self, context: Dict[str, Any]) -> None:
+        """
+        Generate True/False statements from context.
+
+        Args:
+            context (dict): Must contain "sentence", optionally "words", "lemmas", "other_words".
+
+        Raises:
+            ValueError: If "sentence" is missing or empty.
+
+        Returns:
+            None: Mutates self.question, self.statements, self.answer.
+        """
         sentence = context.get("sentence", "").strip()
         if not sentence:
             raise ValueError("Missing 'sentence' in context")
 
         doc = nlp(sentence)
-        all_markers = find_markers_in_doc(doc, tfs_matcher)
+        all_markers = find_markers_in_doc(doc)
 
         sentences = [sent for sent in doc.sents if sent.text.strip()]
         if not sentences:
@@ -196,23 +180,11 @@ class TrueFalseExercise(BaseExercise):
         """
         true_statements = []
         for sent in sentences[:3]:
-            if isinstance(sent, str):
-                sent_text = sent.strip()
-                original = sent_text
-            else:
-                sent_text = sent.text.strip()
-                original = sent.text.strip()
-            paraphrased_list = paraphrase(
-                tfs_model,
-                tfs_tokenizer,
-                sent_text,
-                num_return_sequences=1,
-            )
-            paraphrased = paraphrased_list[0] if paraphrased_list else sent_text
+            paraphrased = paraphrase(tfs_model, tfs_tokenizer, sent.text.strip())
             true_statements.append({
                 "text": paraphrased,
                 "is_true": True,
-                "original": original,
+                "original": sent.text.strip(),
             })
         return true_statements
 
@@ -231,15 +203,8 @@ class TrueFalseExercise(BaseExercise):
         false_statements = []
 
         for sent in sentences:
-            if isinstance(sent, str):
-                doc = nlp(sent.strip())
-                sents = list(doc.sents)
-                span = sents[0] if sents else doc[0 : len(doc)]
-            else:
-                span = cast(Span, sent)
-
-            sent_text = span.text.strip()
-            sent_start, sent_end = span.start, span.end
+            sent_text = sent.text.strip()
+            sent_start, sent_end = sent.start, sent.end
 
             sent_markers = [
                 m for m in all_markers
@@ -248,7 +213,7 @@ class TrueFalseExercise(BaseExercise):
 
             if sent_markers:
                 marker = random.choice(sent_markers)
-                distorted = distort_span(span, marker)
+                distorted = distort_span(sent, marker)
 
                 false_statements.append({
                     "text": distorted,
@@ -281,8 +246,15 @@ class TrueFalseExercise(BaseExercise):
         return [stmt for stmt in statements if stmt["text"].strip()][:5]
 
     def validate_answer(self, user_answer: List[bool]) -> bool:
-        if not isinstance(user_answer, list):
-            return False
-        if len(user_answer) != len(self.statements):
+        """
+        Check if the user’s answer matches the internal key.
+
+        Args:
+            user_answer (list[bool]): User’s True/False choices.
+
+        Returns:
+            bool: True if the answer matches the key.
+        """
+        if not isinstance(user_answer, list) or len(user_answer) != len(self.statements):
             return False
         return user_answer == self.answer
