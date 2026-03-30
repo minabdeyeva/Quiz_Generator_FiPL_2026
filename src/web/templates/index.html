@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cover</title>
+    <title>Карточки для изучения</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         html, body {
@@ -15,14 +15,6 @@
             flex-direction: column;
             background-color: #1a1e24;
             color: #fff;
-        }
-        .cover-container {
-            max-width: 42em;
-            width: 100%;
-            margin: auto;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
         }
         .nav-masthead .nav-link {
             color: rgba(255,255,255,.6);
@@ -41,57 +33,677 @@
             color: #fff;
             border-bottom-color: #fff;
         }
-        .btn-light {
-            background-color: #fff;
-            color: #1a1e24;
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .columns-container {
+            flex-grow: 1;
+            padding: 1rem 0 2rem;
+        }
+        .col-left, .col-center, .col-right {
+            height: 100%;
+        }
+        .panel {
+            background-color: rgba(255,255,255,0.05);
+            border-radius: 0.5rem;
+            padding: 1.25rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .panel h5 {
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 0.5rem;
+        }
+        .question-card {
+            background-color: #2c3038;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 0;
+            font-size: 1.15rem;
+            font-weight: 500;
+            flex: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .exercise-question {
+            width: 100%;
+            line-height: 1.7;
+        }
+        .exercise-description {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.75);
+            margin-bottom: 0.75rem;
+        }
+        .answer-area {
+            background-color: #2c3038;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .button-row {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .btn-light, .btn-light:hover, .btn-light:focus, .btn-light:active {
+            background-color: #fff !important;
+            color: #1a1e24 !important;
             border: none;
-            padding: 0.75rem 2rem;
             font-weight: 600;
         }
-        .btn-light:hover {
-            background-color: #f0f0f0;
+        .exercise-type-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
         }
-        footer a {
+        .exercise-type-list li {
+            margin-bottom: 0.5rem;
+        }
+        .exercise-type-list .btn {
+            text-align: left;
+            width: 100%;
+            background-color: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
             color: #fff;
-            text-decoration: none;
         }
-        footer a:hover {
-            text-decoration: underline;
+        .exercise-type-list .btn.active {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
         }
-        .lead {
-            margin-bottom: 1.5rem;
+        .exercise-type-list .btn:hover {
+            background-color: rgba(13,110,253,0.2);
+        }
+        .matching-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+            align-items: center;
+        }
+        .matching-word {
+            width: 35%;
+            font-weight: 700;
+        }
+        .matching-select {
+            width: 65%;
+        }
+        .word-order-select {
+            min-width: 130px;
+            margin: 0.25rem;
+        }
+        .fill-text {
+            line-height: 2.2;
+            text-align: left;
+            font-size: 1.05rem;
+        }
+        .fill-select {
+            min-width: 150px;
+            max-width: 220px;
+            display: inline-block;
+            margin: 0 0.35rem;
+            vertical-align: middle;
+        }
+        .preview {
+            background-color: #2c3038 !important;
+            color: #fff !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            flex-grow: 1;
+            min-height: 280px;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+        }
+        .preview:focus {
+            box-shadow: none;
+            border-color: rgba(255,255,255,0.2) !important;
+        }
+        .option-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .option-card {
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            background-color: rgba(255,255,255,0.03);
+        }
+        .feedback-space {
+            min-height: 1.75rem;
+        }
+        .loading-text {
+            color: rgba(255,255,255,0.75);
+        }
+        .error-box {
+            color: #ffb0b0;
+            background-color: rgba(220, 53, 69, 0.12);
+            border: 1px solid rgba(220, 53, 69, 0.35);
+            border-radius: 0.75rem;
+            padding: 0.85rem 1rem;
+        }
+        .form-select,
+        .form-control {
+            background-color: rgba(255,255,255,0.08);
+            color: #fff;
+            border-color: rgba(255,255,255,0.12);
+        }
+        .form-select option {
+            color: #111;
+        }
+        .is-valid {
+            border-color: #198754 !important;
+            background-color: rgba(25,135,84,0.14) !important;
+        }
+        .is-invalid {
+            border-color: #dc3545 !important;
+            background-color: rgba(220,53,69,0.14) !important;
+        }
+        .form-check-input.is-valid,
+        .form-check-input.is-invalid {
+            border-width: 2px;
+        }
+        @media (max-width: 768px) {
+            .columns-container .row {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .col-left, .col-center, .col-right {
+                height: auto;
+                min-height: 300px;
+            }
+            .matching-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .matching-word, .matching-select {
+                width: 100%;
+            }
         }
     </style>
 </head>
-<body class="text-center">
-    <p></p>
-    <div class="cover-container">
-        <header class="mb-auto">
+<body>
+    <header class="pt-3">
+        <div class="cover-container mx-auto px-3" style="max-width: 42em;">
             <div>
-                <h3 class="float-md-start mb-0">Cover</h3>
+                <h3 class="float-md-start mb-0">Quiz Generator</h3>
                 <nav class="nav nav-masthead justify-content-center float-md-end">
-                    <a class="nav-link active" aria-current="page" href="#">Home</a>
-                    <a class="nav-link" href="#">Features</a>
-                    <a class="nav-link" href="#">Contact</a>
+                    <a class="nav-link active" href="{{ url_for('index') }}">Home</a>
+                    <a class="nav-link" href="{{ url_for('about') }}">About us</a>
                 </nav>
             </div>
-        </header>
+        </div>
+    </header>
 
-        <main class="px-3">
-            <h1 class="display-5 fw-normal">Cover your page.</h1>
-            <p class="lead">Cover is a one-page template for building simple and beautiful home pages.</p>
-            <p class="lead">Download, edit the text, and add your own fullscreen background photo to make it your own.</p>
-            <p class="lead">
-                <a href="#" class="btn btn-lg btn-light">Learn more</a>
-            </p>
-        </main>
+    <div class="main-content">
+        <div class="columns-container container-fluid h-100">
+            <div class="row h-100">
+                <div class="col-md-3 col-left mb-3 mb-md-0">
+                    <div class="panel">
+                        <h5>Тип упражнения</h5>
+                        <ul class="exercise-type-list">
+                            <li><button class="btn exercise-type-btn active" data-type="truefalse">True / False</button></li>
+                            <li><button class="btn exercise-type-btn" data-type="matching">Matching</button></li>
+                            <li><button class="btn exercise-type-btn" data-type="wordorder">Word Order</button></li>
+                            <li><button class="btn exercise-type-btn" data-type="fillblanks">Fill blanks</button></li>
+                            <li><button class="btn exercise-type-btn" data-type="multiplechoice">Multiple Choice</button></li>
+                        </ul>
+                    </div>
+                </div>
 
-        <footer class="mt-auto text-white-50">
-            <p>Cover template for <a href="https://getbootstrap.com/" target="_blank">Bootstrap</a> by <a href="https://twitter.com/mdo" target="_blank">@mdo</a>.</p>
-        </footer>
+                <div class="col-md-6 col-center mb-3 mb-md-0">
+                    <div class="panel">
+                        <h5>Задание</h5>
+                        <div class="question-card" id="questionText">
+                            <div class="loading-text">Загрузка карточки...</div>
+                        </div>
+                        <div class="answer-area" id="answerForm"></div>
+                        <div class="button-row">
+                            <button class="btn btn-light" id="showAnswerBtn">Посмотреть ответ</button>
+                            <button class="btn btn-outline-light" id="generateBtn">Сгенерировать новую карточку</button>
+                        </div>
+                        <div class="feedback-space mt-3">
+                            <div class="text-center" id="feedback"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 col-right">
+                    <div class="panel">
+                        <h5>Загрузить текст</h5>
+                        <input type="file" id="fileInput" class="form-control file-input" accept=".txt">
+                        <h5 class="mt-3">Предпросмотр</h5>
+                        <textarea id="previewArea" class="preview form-control">{{ default_preview_text }}</textarea>
+                        <button class="btn btn-outline-light mt-3" id="usePreviewBtn">Построить карточку по тексту</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <p></p>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentType = 'truefalse';
+        let currentExercise = null;
+
+        const questionDiv = document.getElementById('questionText');
+        const answerFormDiv = document.getElementById('answerForm');
+        const feedbackDiv = document.getElementById('feedback');
+        const previewArea = document.getElementById('previewArea');
+        const fileInput = document.getElementById('fileInput');
+        const showAnswerBtn = document.getElementById('showAnswerBtn');
+        const generateBtn = document.getElementById('generateBtn');
+        const usePreviewBtn = document.getElementById('usePreviewBtn');
+        const typeButtons = document.querySelectorAll('.exercise-type-btn');
+
+        function clearFeedback() {
+            feedbackDiv.textContent = '';
+            feedbackDiv.className = 'text-center';
+        }
+
+        function showFeedback(message, isCorrect) {
+            feedbackDiv.textContent = message;
+            feedbackDiv.className = isCorrect ? 'text-center text-success' : 'text-center text-danger';
+        }
+
+        function showError(message) {
+            questionDiv.innerHTML = `<div class="error-box">${message}</div>`;
+            answerFormDiv.innerHTML = '';
+            clearFeedback();
+        }
+
+        function renderQuestion(exercise) {
+            let questionHtml = exercise.question || '';
+
+            if (exercise.type === 'fillblanks') {
+                questionHtml = questionHtml.replace(/\[\[BLANK_\d+\]\]/g, '___');
+            }
+
+            questionDiv.innerHTML = `
+                <div class="w-100">
+                    <div class="exercise-description">${exercise.description || ''}</div>
+                    <div class="exercise-question">${questionHtml}</div>
+                </div>
+            `;
+        }
+
+        function renderTrueFalse(exercise) {
+            answerFormDiv.innerHTML = `
+                <div class="option-list">
+                    <label class="option-card">
+                        <input class="form-check-input me-2" type="radio" name="tfAnswer" value="true">
+                        True
+                    </label>
+                    <label class="option-card">
+                        <input class="form-check-input me-2" type="radio" name="tfAnswer" value="false">
+                        False
+                    </label>
+                </div>
+            `;
+        }
+
+        function renderMatching(exercise) {
+            let html = '';
+
+            exercise.pairs.forEach((pair, index) => {
+                let optionsHtml = '<option value="">Выберите вариант</option>';
+
+                pair.options.forEach((option) => {
+                    optionsHtml += `<option value="${option}">${option}</option>`;
+                });
+
+                html += `
+                    <div class="matching-row">
+                        <div class="matching-word">${pair.word}</div>
+                        <select class="form-select matching-select" data-word="${pair.word}" data-index="${index}">
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                `;
+            });
+
+            answerFormDiv.innerHTML = html;
+        }
+
+        function renderWordOrder(exercise) {
+            let optionsHtml = '<option value="">---</option>';
+            exercise.words.forEach((word) => {
+                optionsHtml += `<option value="${word}">${word}</option>`;
+            });
+
+            let html = '<div class="d-flex flex-wrap justify-content-center">';
+            exercise.words.forEach((_, index) => {
+                html += `
+                    <select class="form-select word-order-select" data-index="${index}">
+                        ${optionsHtml}
+                    </select>
+                `;
+            });
+            html += '</div>';
+
+            answerFormDiv.innerHTML = html;
+        }
+
+        function renderFillBlanks(exercise) {
+            let html = exercise.question;
+
+            exercise.blanks.forEach((blank) => {
+                let optionsHtml = '<option value="">---</option>';
+
+                blank.options.forEach((option) => {
+                    optionsHtml += `<option value="${option}">${option}</option>`;
+                });
+
+                const selectHtml = `
+                    <select class="form-select fill-select" data-index="${blank.index}">
+                        ${optionsHtml}
+                    </select>
+                `;
+
+                html = html.replace(`[[BLANK_${blank.index}]]`, selectHtml);
+            });
+
+            answerFormDiv.innerHTML = `<div class="fill-text">${html}</div>`;
+        }
+
+        function renderMultipleChoice(exercise) {
+            let html = '<div class="option-list">';
+
+            exercise.options.forEach((option, index) => {
+                html += `
+                    <label class="option-card">
+                        <input class="form-check-input me-2" type="radio" name="mcAnswer" value="${option}" data-index="${index}">
+                        ${option}
+                    </label>
+                `;
+            });
+
+            html += '</div>';
+            answerFormDiv.innerHTML = html;
+        }
+
+        function renderExercise(exercise) {
+            currentExercise = exercise;
+            clearFeedback();
+            renderQuestion(exercise);
+
+            if (exercise.type === 'truefalse') {
+                renderTrueFalse(exercise);
+                return;
+            }
+
+            if (exercise.type === 'matching') {
+                renderMatching(exercise);
+                return;
+            }
+
+            if (exercise.type === 'wordorder') {
+                renderWordOrder(exercise);
+                return;
+            }
+
+            if (exercise.type === 'fillblanks') {
+                renderFillBlanks(exercise);
+                return;
+            }
+
+            if (exercise.type === 'multiplechoice') {
+                renderMultipleChoice(exercise);
+            }
+        }
+
+        function collectUserAnswer() {
+            if (!currentExercise) {
+                return null;
+            }
+
+            if (currentExercise.type === 'truefalse') {
+                const selected = document.querySelector('input[name="tfAnswer"]:checked');
+                return selected ? selected.value : '';
+            }
+
+            if (currentExercise.type === 'matching') {
+                const answer = {};
+                document.querySelectorAll('.matching-select').forEach((select) => {
+                    answer[select.dataset.word] = select.value;
+                });
+                return answer;
+            }
+
+            if (currentExercise.type === 'wordorder') {
+                const answer = [];
+                document.querySelectorAll('.word-order-select').forEach((select) => {
+                    answer.push(select.value);
+                });
+                return answer;
+            }
+
+            if (currentExercise.type === 'fillblanks') {
+                const answer = {};
+                document.querySelectorAll('.fill-select').forEach((select) => {
+                    answer[select.dataset.index] = select.value;
+                });
+                return answer;
+            }
+
+            if (currentExercise.type === 'multiplechoice') {
+                const selected = document.querySelector('input[name="mcAnswer"]:checked');
+                return selected ? selected.value : '';
+            }
+
+            return null;
+        }
+
+        function resetValidationMarks() {
+            answerFormDiv.querySelectorAll('.is-valid, .is-invalid').forEach((element) => {
+                element.classList.remove('is-valid', 'is-invalid');
+            });
+        }
+
+        function applyValidation(validation) {
+            resetValidationMarks();
+
+            if (currentExercise.type === 'truefalse') {
+                const selected = document.querySelector('input[name="tfAnswer"]:checked');
+                if (!selected) {
+                    showFeedback('Сначала выберите ответ.', false);
+                    return;
+                }
+
+                if (validation.correct) {
+                    selected.classList.add('is-valid');
+                    showFeedback('Верно!', true);
+                } else {
+                    selected.classList.add('is-invalid');
+                    const correctInput = document.querySelector(`input[name="tfAnswer"][value="${validation.correct_answer}"]`);
+                    if (correctInput) {
+                        correctInput.classList.add('is-valid');
+                    }
+                    showFeedback('Неверно.', false);
+                }
+                return;
+            }
+
+            if (currentExercise.type === 'matching') {
+                validation.results.forEach((item) => {
+                    const select = document.querySelector(`.matching-select[data-word="${item.word}"]`);
+                    if (!select) {
+                        return;
+                    }
+
+                    if (item.correct) {
+                        select.classList.add('is-valid');
+                    } else {
+                        select.classList.add('is-invalid');
+                    }
+                });
+
+                showFeedback(validation.correct ? 'Все пары выбраны верно!' : 'Есть ошибки в сопоставлении.', validation.correct);
+                return;
+            }
+
+            if (currentExercise.type === 'wordorder') {
+                validation.results.forEach((item) => {
+                    const select = document.querySelector(`.word-order-select[data-index="${item.index}"]`);
+                    if (!select) {
+                        return;
+                    }
+
+                    if (item.correct) {
+                        select.classList.add('is-valid');
+                    } else {
+                        select.classList.add('is-invalid');
+                    }
+                });
+
+                showFeedback(validation.correct ? 'Порядок слов восстановлен правильно!' : 'Порядок слов пока неверный.', validation.correct);
+                return;
+            }
+
+            if (currentExercise.type === 'fillblanks') {
+                validation.results.forEach((item) => {
+                    const select = document.querySelector(`.fill-select[data-index="${item.index}"]`);
+                    if (!select) {
+                        return;
+                    }
+
+                    if (item.correct) {
+                        select.classList.add('is-valid');
+                    } else {
+                        select.classList.add('is-invalid');
+                    }
+                });
+
+                showFeedback(validation.correct ? 'Все пропуски заполнены правильно!' : 'Есть ошибки в заполнении пропусков.', validation.correct);
+                return;
+            }
+
+            if (currentExercise.type === 'multiplechoice') {
+                const selected = document.querySelector('input[name="mcAnswer"]:checked');
+                if (!selected) {
+                    showFeedback('Сначала выберите ответ.', false);
+                    return;
+                }
+
+                if (validation.correct) {
+                    selected.classList.add('is-valid');
+                    showFeedback('Верно!', true);
+                } else {
+                    selected.classList.add('is-invalid');
+                    const correctInput = document.querySelector(`input[name="mcAnswer"][value="${validation.correct_answer}"]`);
+                    if (correctInput) {
+                        correctInput.classList.add('is-valid');
+                    }
+                    showFeedback('Неверно.', false);
+                }
+            }
+        }
+
+        async function generateExercise() {
+            questionDiv.innerHTML = '<div class="loading-text">Загрузка карточки...</div>';
+            answerFormDiv.innerHTML = '';
+            clearFeedback();
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        exercise_type: currentType,
+                        text: previewArea.value
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    showError(data.error || 'Не удалось сгенерировать карточку.');
+                    return;
+                }
+
+                renderExercise(data.exercise);
+            } catch (error) {
+                showError('Не удалось связаться с сервером.');
+            }
+        }
+
+        async function validateAnswer() {
+            if (!currentExercise) {
+                return;
+            }
+
+            const userAnswer = collectUserAnswer();
+
+            try {
+                const response = await fetch('/api/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_answer: userAnswer
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    showFeedback(data.error || 'Не удалось проверить ответ.', false);
+                    return;
+                }
+
+                applyValidation(data.validation);
+            } catch (error) {
+                showFeedback('Не удалось связаться с сервером.', false);
+            }
+        }
+
+        typeButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                typeButtons.forEach((currentButton) => currentButton.classList.remove('active'));
+                button.classList.add('active');
+                currentType = button.dataset.type;
+                generateExercise();
+            });
+        });
+
+        showAnswerBtn.addEventListener('click', validateAnswer);
+        generateBtn.addEventListener('click', generateExercise);
+        usePreviewBtn.addEventListener('click', generateExercise);
+
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+
+            if (!file) {
+                return;
+            }
+
+            if (!file.name.endsWith('.txt')) {
+                showFeedback('Можно загружать только .txt файл.', false);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (loadEvent) => {
+                previewArea.value = loadEvent.target.result;
+                generateExercise();
+            };
+            reader.readAsText(file, 'utf-8');
+        });
+
+        generateExercise();
+    </script>
 </body>
 </html>
