@@ -1,28 +1,19 @@
-import pytest
-
 from src.exercises.true_false import (
     TrueFalseExercise,
     find_markers_in_doc,
     distort_span,
-    nlp,
-    paraphrase,
+    paraphrase
 )
 
 
-# Helper classes for mocking NLP
 class FakeSpan:
-    def __init__(self, text, start=0, end=None, sent=None):
+    def __init__(self, text, start=0, end=1, sent=None):
         self.text = text
         self.start = start
-        self.end = end if end is not None else max(1, len(text))
-        self.sent = sent if sent is not None else self
+        self.end = end
+        self.sent = sent or self
 
     def __getitem__(self, item):
-        if isinstance(item, slice):
-            start = item.start if item.start is not None else 0
-            stop = item.stop if item.stop is not None else len(self.text)
-            sub = self.text[start:stop]
-            return FakeSpan(sub, start=start, end=stop, sent=self.sent)
         return FakeSpan(self.text)
 
     def __str__(self):
@@ -33,27 +24,16 @@ class FakeDoc:
     def __init__(self, text):
         self.text = text
         self.vocab = type("Vocab", (), {"strings": {1: "TEMPORAL_MARKERS"}})()
-        root = FakeSpan(text, 0, len(text))
-        self._sents = [root]
+        self._sents = [FakeSpan(text, 0, len(text))]
 
     @property
     def sents(self):
         return self._sents
 
-    def __len__(self):
-        return len(self.text)
-
     def __getitem__(self, item):
-        if isinstance(item, slice):
-            start = item.start if item.start is not None else 0
-            stop = item.stop if item.stop is not None else len(self.text)
-            sub = self.text[start:stop]
-            sent_root = FakeSpan(self.text, 0, len(self.text))
-            return FakeSpan(sub, start=start, end=stop, sent=sent_root)
         return FakeSpan(self.text)
 
 
-# Reusable assertion: sentence contains real words
 def assert_contains_real_words(sentence: str):
     sentence = sentence.strip()
     assert sentence != "", "Sentence is empty or only spaces"
@@ -61,7 +41,6 @@ def assert_contains_real_words(sentence: str):
     assert len(sentence.split()) > 1, "Sentence must contain multiple words"
 
 
-# Tests for find_markers_in_doc
 def test_find_markers_returns_expected_structure(monkeypatch):
     doc = FakeDoc("J'ai toujours aimé apprendre, mais parfois je déteste le faire.")
 
@@ -76,7 +55,6 @@ def test_find_markers_returns_expected_structure(monkeypatch):
     assert "end" in result
 
 
-# Tests for distort_span
 def test_distort_span_replaces_word():
     sent = FakeSpan("J'ai toujours aimé apprendre, mais parfois je déteste le faire.", start=0)
     marker = {
@@ -91,7 +69,6 @@ def test_distort_span_replaces_word():
     assert_contains_real_words(result)
 
 
-# Tests for TrueFalseExercise.generate
 def test_generate_creates_true_and_false_statements(monkeypatch):
     ex = TrueFalseExercise("1")
     sentence = "J'ai toujours aimé apprendre, mais parfois je déteste le faire."
@@ -126,7 +103,6 @@ def test_generate_creates_true_and_false_statements(monkeypatch):
             assert "toujours" in stmt["text"] or "parfois" in stmt["text"]
 
 
-# Tests for _get_false_statements
 def test_false_statements_replaces_marker(monkeypatch):
     ex = TrueFalseExercise("1")
     sentence_span = FakeSpan(
@@ -147,7 +123,6 @@ def test_false_statements_replaces_marker(monkeypatch):
     assert_contains_real_words(stmt["text"])
 
 
-# Tests for _get_true_statements
 def test_true_statements_are_marked_true(monkeypatch):
     ex = TrueFalseExercise("1")
     monkeypatch.setattr(
@@ -163,7 +138,6 @@ def test_true_statements_are_marked_true(monkeypatch):
     assert_contains_real_words(stmt["text"])
 
 
-# Tests for validate_answer
 def test_validate_answer_correct():
     ex = TrueFalseExercise("1")
     ex.statements = [{"text": "a"}, {"text": "b"}]
@@ -185,7 +159,6 @@ def test_validate_answer_wrong_type():
     assert ex.validate_answer("not a list") is False
 
 
-# Tests for paraphrase
 def test_paraphrase_returns_str(monkeypatch):
     class FakeModel:
         def generate(self, **kwargs):
