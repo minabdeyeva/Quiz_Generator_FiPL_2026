@@ -101,7 +101,6 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages]
 find = {where = ["src"]}
 
-
 [tool.black]
 line-length = 100
 target-version = ['py311']
@@ -124,12 +123,7 @@ src_paths = [
 
 [tool.mypy]
 python_version = "3.11"
-exclude = [
-    "venv*",
-    "test.py",
-    "tests/",
-    "docs/"
-]
+exclude = "^(venv.*|tests/|docs/)"
 disallow_untyped_defs = true
 disallow_any_unimported = true
 no_implicit_optional = true
@@ -137,7 +131,6 @@ check_untyped_defs = true
 show_error_codes = true
 warn_unused_ignores = false
 
-# Simplify a few mypy configs
 disable_error_code = [
     "union-attr",
     "var-annotated",
@@ -150,17 +143,29 @@ module = [
     "evaluate",
     "transformers",
     "torch.*",
+    "tests.*",
+    "conftest"
 ]
+ignore_errors = true
 ignore_missing_imports = true
 
 [tool.pylint.main]
 fail-under = 10.0
 jobs = 1
 py-version = "3.11"
-suggestion-mode = true
+ignore = ["tests"]
+ignore-patterns = ["^tests/.*"]
 
 [tool.pylint.format]
 max-line-length = 100
+exclude = "tests/"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["venv*", "build", ".git", "dist", "output", "src"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
 
 [tool.logging]
 version = 1
