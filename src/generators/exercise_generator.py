@@ -5,6 +5,7 @@ from src.core.document_loader import DocumentLoader
 from src.core.text_processor import TextProcessor
 from src.core.word_vectorizer import Word2VecAnalyzer
 
+from src.exercises.true_false import TrueFalseExercise
 from src.exercises.word_order import WordOrderExercise
 from src.exercises.fill_blanks import FillBlanksExercise
 from src.exercises.synonyms import SynonymsExercise
@@ -39,6 +40,7 @@ class ExerciseGenerator:
             'fill_blanks': FillBlanksExercise,
             'multiple_choice': SynonymsExercise,
             'matching': MatchingExercise,
+            'true_false': TrueFalseExercise
         }
 
     def load_texts(self, file_paths: List[str]) -> None:
